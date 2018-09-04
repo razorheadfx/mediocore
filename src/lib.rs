@@ -81,7 +81,7 @@ impl CoreSetting{
     let scaling_available_governors = {
         let mut chars = fs::read_to_string(g.join("scaling_available_governors"))?;
         chars.retain(|c|!c.is_control());
-        chars.split(" ").map(|s|s.into()).collect()
+        chars.split(&" ").map(|s|s.into()).collect()
     };
     let c = CoreSetting{
         core,
@@ -111,12 +111,13 @@ impl CoreSetting{
 
     /// check given governor against valid governors and apply it to the internal representation
     /// Only calls to apply will write changes to the sysfs
-    pub fn set_governor(&mut self, guvnor : &String) -> io::Result<()>{
-        if !self.scaling_available_governors.contains(guvnor){
-            return Err(Error::new(ErrorKind::InvalidInput, format!("Invalid scaling governor, must be one of {:?}", self.scaling_available_governors)))
-        }
-        self.scaling_governor = guvnor.clone();
-        Ok(())
+    pub fn set_governor(&mut self, guvnor : &str) -> io::Result<()>{
+        self.validate_governor(guvnor).and_then(|guvnor|{
+            let mut f = fs::OpenOptions::new().write(true).open(self.core.join("cpufreq/scaling_min_freq"))?;
+            f.write_all(guvnor.as_ref())?;
+            Ok(())
+
+        })
     }
 
     pub fn validate_min(&self, freq: u32) -> io::Result<u32>{
@@ -138,8 +139,8 @@ impl CoreSetting{
         }
     }
 
-    pub fn validate_governor<'a>(&self, governor : &'a String) -> io::Result<&'a String>{
-        if self.scaling_available_governors.contains(governor){
+    pub fn validate_governor<'a>(&self, governor : &'a str) -> io::Result<&'a str>{
+        if self.scaling_available_governors.iter().any(|g|g.as_str().eq(governor)){
             Ok(governor)
         }else{
             Err(Error::new(ErrorKind::InvalidInput, format!("Governor {} not available. Must be one of {:?}", governor, self.scaling_available_governors)))
@@ -149,7 +150,8 @@ impl CoreSetting{
     pub fn set_min(&mut self, freq : u32) -> io::Result<()>{
         self.validate_min(freq).and_then(|freq|{
             let mut f = fs::OpenOptions::new().write(true).open(self.core.join("cpufreq/scaling_min_freq"))?;
-            Ok(f.write_all(format!("{}",freq).as_ref())?)
+            f.write_all(format!("{}",freq).as_ref())?;
+            Ok(())
         })
     }
 
@@ -157,7 +159,8 @@ impl CoreSetting{
     pub fn set_max(&mut self, freq : u32) -> io::Result<()>{
         self.validate_max(freq).and_then(|freq|{
             let mut f = fs::OpenOptions::new().write(true).open(self.core.join("cpufreq/scaling_max_freq"))?;
-            Ok(f.write_all(format!("{}",freq).as_ref())?)
+            f.write_all(format!("{}",freq).as_ref())?;
+            Ok(())
         })
     }
 }
