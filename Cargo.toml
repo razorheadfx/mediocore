@@ -1,0 +1,15 @@
+[package]
+name = "mediocore"
+version = "0.0.1"
+authors = ["razorheadfx <razorhead.effect@gmail.com>"]
+
+[dependencies]
+log = "0.4.3"
+
+[dependencies.env_logger]
+version = "0.5.11"
+optional = true
+
+[features]
+default = ["bin"]
+bin = ["env_logger"]
