@@ -105,10 +105,108 @@ impl CoreSetting{
         Ok(())
     }
 
-    pub fn set_max(&mut self, freq : u32) -> io::Result<()>{
-        match freq{
-            self.cpuinfo_min_freq..self.scaling_max_freq => unimplemented!(),
-            _ => unimplemented!()
+    pub fn validate_min(&self, freq: u32) -> io::Result<u32>{
+        if self.cpuinfo_min_freq <= freq && freq <= self.scaling_max_freq
+        {
+            Ok(freq)
+        }else{
+            Err(Error::new(ErrorKind::InvalidInput, format!("Min Frequency{} not in {}..={}", freq, self.cpuinfo_min_freq, self.scaling_max_freq)))
         }
     }
+
+    pub fn validate_max(&self, freq: u32) -> io::Result<u32>{
+        if  (self.cpuinfo_min_freq <= freq && self.scaling_min_freq <= freq)
+             && freq <= self.cpuinfo_max_freq
+        {
+            Ok(freq)
+        }else{
+            Err(Error::new(ErrorKind::InvalidInput, format!("Max Frequency {} not in min({},{})..={}", freq, self.cpuinfo_min_freq, self.scaling_min_freq, self.cpuinfo_max_freq)))
+        }
+    }
+
+    pub fn validate_governor<'a>(&self, governor : &'a String) -> io::Result<&'a String>{
+        if self.scaling_available_governors.contains(governor){
+            Ok(governor)
+        }else{
+            Err(Error::new(ErrorKind::InvalidInput, format!("Governor {} not available. Must be one of {:?}", governor, self.scaling_available_governors)))
+        }
+    }
+
+    pub fn set_min(&mut self, freq : u32) -> io::Result<()>{
+        self.validate_min(freq).and_then(|freq|{
+            let mut f = fs::OpenOptions::new().write(true).open(self.core.join("cpufreq/scaling_min_freq"))?;
+            Ok(f.write_all(format!("{}",freq).as_ref())?)
+        })
+    }
+
+
+    pub fn set_max(&mut self, freq : u32) -> io::Result<()>{
+        self.validate_max(freq).and_then(|freq|{
+            let mut f = fs::OpenOptions::new().write(true).open(self.core.join("cpufreq/scaling_max_freq"))?;
+            Ok(f.write_all(format!("{}",freq).as_ref())?)
+        })
+    }
 }
+
+
+#[cfg(test)]
+mod test{
+    use CoreSetting;
+    use std::path::PathBuf;
+    use io::{ErrorKind, Result};
+    
+    #[test]
+    fn freq_validation() {
+        let s = CoreSetting{
+            core : PathBuf::new(),
+            cpuinfo_min_freq : 800000,
+            cpuinfo_max_freq : 2500000,
+            scaling_available_governors : vec![],
+            scaling_governor : "".into(),
+            scaling_min_freq : 850000,
+            scaling_max_freq : 900000
+        };
+
+        let check_val = |x,v|{
+            match x{
+                Ok(u) => v == u,
+                Err(_) => false
+            }
+        };
+
+        let check_err = |x : Result<u32>|{
+            match x{
+                Ok(_) => false,
+                Err(ref e) if e.kind() == ErrorKind::InvalidInput => true,
+                _ => false
+            }
+        };
+
+        assert!(check_val(s.validate_min(800000), 800000));
+        assert!(check_val(s.validate_min(850000), 850000));
+        assert!(check_err(s.validate_min(1000000)));
+
+        assert!(check_val(s.validate_max(1000000), 1000000));
+        assert!(check_err(s.validate_max(8000000)));
+
+    }
+
+    #[test]
+    fn govnor_validation() {
+        let s = CoreSetting{
+            core : PathBuf::new(),
+            cpuinfo_min_freq : 800000,
+            cpuinfo_max_freq : 2500000,
+            scaling_available_governors : vec!["performance".into(),"powersave".into()],
+            scaling_governor : "powersave".into(),
+            scaling_min_freq : 850000,
+            scaling_max_freq : 900000
+        };
+
+        assert!(s.validate_governor(&"performance".into()).is_ok());
+        assert!(s.validate_governor(&"conservative".into()).is_err());
+    }
+
+
+}
+

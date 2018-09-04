@@ -1,7 +1,5 @@
 #![feature(drain_filter)]
-use std::path::PathBuf;
 use std::io;
-use std::fs;
 
 #[macro_use]
 extern crate log;
@@ -22,8 +20,6 @@ fn main() -> io::Result<()>{
 
     let cores = mediocore::discover_core_settings()?;
 	debug!("Found Configuration {:#?}", cores);
-
-	info!("Current Configuration:");
 	 
     Ok(())
 }
