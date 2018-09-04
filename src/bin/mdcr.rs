@@ -18,8 +18,13 @@ macro_rules! ghz{
 fn main() -> io::Result<()>{
     env_logger::init();
 
-    let cores = mediocore::discover_core_settings()?;
-	debug!("Found Configuration {:#?}", cores);
+    let mut cores = mediocore::discover_core_settings()?;
+    cores.sort_by_key(|c| c.num());
+	info!("Discovered Configuration {:#?}", cores);
+
+	
+
+
 	 
     Ok(())
 }

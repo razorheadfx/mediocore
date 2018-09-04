@@ -63,6 +63,8 @@ pub struct CoreSetting{
 
 impl CoreSetting{
 
+
+    /// discover settings for the core specified by its path
     pub fn discover(core: PathBuf) -> io::Result<CoreSetting>{
     let g = core.join("cpufreq");
 
@@ -93,6 +95,18 @@ impl CoreSetting{
     debug!("Read settings : {:#?}", c);
 
     Ok(c)
+    }
+
+    /// parse the core path to get the core number
+    // OPT: should do this when discovering the cores
+    pub fn num(&self) -> u32{
+        self.core.file_name()
+            .expect("Invalid core name")
+            .to_str()
+            .expect("Failed to convert to core name to str")
+            .rsplit("cpu").next().expect("Core name did not contain 'cpu'")
+            .parse()
+            .expect("Core name parsing failed")
     }
 
     /// check given governor against valid governors and apply it to the internal representation
