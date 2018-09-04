@@ -6,10 +6,10 @@ authors = ["razorheadfx <razorhead.effect@gmail.com>"]
 [dependencies]
 log = "0.4.3"
 
-[dependencies.env_logger]
-version = "0.5.11"
-optional = true
+env_logger = { version = "0.5.11", optional = true}
+structopt = { version = "0.2", optional = true}
+
 
 [features]
 default = ["bin"]
-bin = ["env_logger"]
+bin = ["env_logger", "structopt"]
