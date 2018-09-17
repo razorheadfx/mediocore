@@ -4,11 +4,14 @@ extern crate env_logger;
 
 #[macro_use]
 extern crate structopt;
+use std::process::exit;
+use mediocore::CoreSetting;
 use structopt::StructOpt;
 
 extern crate mediocore;
 
 use std::io;
+use std::io::ErrorKind;
 
 macro_rules! ghz{
     ($x:expr) =>(   
@@ -20,13 +23,13 @@ macro_rules! ghz{
 #[derive(Debug, StructOpt)]
 #[structopt(name = "mediocore")]
 enum Mdcr{
-	#[structopt(name = "help")]
+	#[structopt(name = "help")] 
 	Help,
 	#[structopt(name = "powersave")]
 	Powersave,
 	#[structopt(name = "performance")]
 	Performance,
-	#[structopt(name = "show"]
+	#[structopt(name = "show")]
 	Show
 }
 
@@ -52,15 +55,13 @@ fn show(){
 fn main(){
     env_logger::init();
     let settings = Mdcr::from_args();
-    debug!("Args provided: {:#?}", settings)
+    debug!("Args provided: {:#?}", settings);
     
     
-	match settings{
-			Help => unimplemented!(),
-			Powersave => powersave(),
-			Performance => performance(),
+    match settings{
+			Mdcr::Help => unimplemented!(),
+			Mdcr::Powersave => powersave(),
+			Mdcr::Performance => performance(),
 			_ => unimplemented!()
-	}
-	 
-    Ok(())
+	};	 
 }
