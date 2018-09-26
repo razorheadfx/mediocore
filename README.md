@@ -28,7 +28,7 @@ See LICENSE for details.
 ## TODO
 - [ ] Implement simple mode
 - [ ] Implement interactive mode
-- [ ] Add console displaying settings for each core i.e core num (core path), min percentage / max percentage , scaling min / scaling max (cpu min/cpumax) with row-wise display.
+- [x] Add console displaying settings for each core i.e core num (core path), min percentage / max percentage , scaling min / scaling max (cpu min/cpumax) with row-wise display.
 ```
  i.e. 8 cores
  0 | 1  2 | 3

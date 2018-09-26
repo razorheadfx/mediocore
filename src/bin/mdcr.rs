@@ -35,12 +35,12 @@ enum Mdcr{
 	Show
 }
 
-macro_rules! try_or_exit_1 {
-    ($x:expr) => (match $x{
+macro_rules! try_or_exit{
+    ($x:expr,$code:expr) => (match $x{
     	Ok(o) => o,
     	Err(e) => {
     		eprintln!("{:?}",e);
-    		exit(1)
+    		exit($code)
     	}
     })
 }
@@ -66,13 +66,7 @@ fn show(){
     /// Width of the table 
     const TABLE_LEGEND_LEN : usize = 23;
 
-	let cores = try_or_exit_1!(discover());
-
-	//123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789
-	//Core     |    0    	  1         2         3         4         6         7
-	//Min[GHz] |         
-    //Max[GHz] |
-    //Governor |
+	let cores = try_or_exit!(discover(),1);
 
     // find out how long the governor description is, then scale space alotted to each core accordingly
     let longest_gov = cores.iter().map(|c| c.curr_gov().len()).max().expect("No governors");
@@ -81,23 +75,28 @@ fn show(){
     let cores_per_line = (TERM_LEN-TABLE_LEGEND_LEN)/per_core_chars;
 
     // generate lines of core descriptions
+
+    println!("Current Settings");
+
     for cs in cores.chunks(cores_per_line){
-    	let mut creline : String = "Core                  :".into();
-    	let mut minline : String = "Min CPU/Current [GHz] :".into();
-    	let mut maxline : String = "Max CPU/Current [GHz] :".into();   
-    	let mut govline : String = "Current Governor      :".into();
+    	let mut creline : String = "Core                   ".into();
+    	let mut minline : String = "Min CPU/Current [GHz]  ".into();
+    	let mut maxline : String = "Max CPU/Current [GHz]  ".into();   
+    	let mut govline : String = "Current Governor       ".into();
 
     	for core in cs.iter(){
             let mut pad_to = creline.len()+per_core_chars;
     		write!(creline," {}", core.num());
-    		write!(minline," {:03.3}", core.cpu_min() as f64 / 1e6);
-            write!(maxline," {:03.3}", core.cpu_max() as f64 / 1e6);
+    		write!(minline," {:03.3}/{:03.3}", core.cpu_min() as f64 / 1e6, core.curr_min() as f64 / 1e6);
+            write!(maxline," {:03.3}/{:03.3}", core.cpu_max() as f64 / 1e6, core.curr_max() as f64 / 1e6);
             write!(govline," {}", core.curr_gov());
             for line in [&mut creline, &mut minline, &mut maxline, &mut govline].iter_mut(){
             while line.len() < pad_to{
                 write!(line, " ");
             }
-            write!(line,"|");    
+            // not a normal vertical line but box drawing character U+2502
+            // https://en.wikipedia.org/wiki/Box-drawing_character
+            write!(line,"│");    
         }
 
     	}
@@ -107,17 +106,18 @@ fn show(){
     	println!("{}",maxline);
     	println!("{}",govline);
 
-        let mut divider = String::with_capacity(80);
-        (0..creline.len()).for_each(|i| {
+        let mut divider = String::with_capacity(TERM_LEN);
+        (0..creline.len()-8).for_each(|i| {
             if i < TABLE_LEGEND_LEN{
                 divider.push_str(" ");
             }else{
-                divider.push_str("-");
+                // not a normal dash but box drawing character U+2500
+                // also longer than normal
+                divider.push_str("─"); 
             }
         });
         println!("{}", divider);
         
-        // all good? exit with 0
     }
 
     // display all available governors
@@ -130,12 +130,13 @@ fn show(){
         govs
     });
 
-    let av_govs = available_governors.iter().fold("* Available Governors : ".to_string(), | mut av_govs, gov|{
+    let av_govs = available_governors.iter().fold("* Available Governors   ".to_string(), | mut av_govs, gov|{
         write!(av_govs, "{} ", gov);
         av_govs
     });
     println!("{}",av_govs);
 
+    // all good? exit with 0
     exit(0);
 
 
