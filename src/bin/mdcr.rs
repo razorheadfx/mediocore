@@ -2,7 +2,6 @@
 extern crate log;
 extern crate env_logger;
 
-#[macro_use]
 extern crate structopt;
 use std::fmt::Write;
 use std::process::exit;
@@ -12,34 +11,53 @@ use structopt::StructOpt;
 extern crate mediocore;
 
 use std::io;
-use std::io::{ErrorKind};
+use std::io::ErrorKind;
 use std::collections::HashSet;
-
-macro_rules! ghz{
-    ($x:expr) =>(   
-        let ghz = $x as f64 / 1e6f64;
-        format!("{:1.3} GHz", ghz)
-)
-}
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "mediocore")]
 enum Mdcr{
-	#[structopt(name = "help", help = "print help messages")]
-	Help,
+    #[structopt(name = "set")]
+    /// Set scaling governor and min/max scaling frequency. Run ```mdcr set help``` for details.
+    Set(Cfg),
 	#[structopt(name = "powersave")]
+    /// Set maximum scaling frequency to minimal CPU frequency and set powersave governor.
 	Powersave,
 	#[structopt(name = "performance")]
+    /// Set maximum scaling frequency to maximum CPU frequency and set performance governor.
 	Performance,
 	#[structopt(name = "show")]
+    /// Pretty print per-core config
 	Show
+}
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "performance")]
+struct Cfg{
+    #[structopt(short="g",long="governor")]
+    /// Change the scaling governor settings
+    pub governor : Option<String>,
+    /// Change the low/min scaling frequency 
+    #[structopt(short="l",long="low")]
+    pub min : Option<u32>,
+    /// Change the high/max scaling frequency
+    #[structopt(short="h",long="high")]
+    pub max : Option<u32>,
+    #[structopt(short="c",long="cores")]
+    /// Comma separated cores to apply the settings to
+    pub cores : Vec<u32>
+
 }
 
 macro_rules! try_or_exit{
     ($x:expr,$code:expr) => (match $x{
     	Ok(o) => o,
+        Err(ref e) if e.kind() == ErrorKind::PermissionDenied =>{
+            eprintln!("Permission denied. Do you have write access to /sys/devices/system/cpu/?");
+            exit(13)
+        },
     	Err(e) => {
-    		eprintln!("{:?}",e);
+    		eprintln!("Unexpected Error: {:?}",e);
     		exit($code)
     	}
     })
@@ -48,7 +66,7 @@ macro_rules! try_or_exit{
 fn discover() -> io::Result<Vec<CoreSetting>>{
 	let mut cores = mediocore::discover_core_settings()?;
     cores.sort_by_key(|c| c.num());
-	info!("Discovered Configuration {:#?}", cores);
+	debug!("Discovered Configuration {:#?}", cores);
 	Ok(cores)
 }
 
@@ -58,6 +76,55 @@ fn powersave(){
 
 fn performance(){
 	unimplemented!()
+}
+
+fn set(cfg : Cfg){
+    let mut cores = try_or_exit!(discover(),1);
+    
+    // cores specified? well then drop the others
+    if !cfg.cores.is_empty(){
+        cores.retain(|c|cfg.cores.iter().any(|n|n.eq(&c.num())));
+    }
+
+    let coreset = match cfg.governor{
+        Some(gov) => {
+            info!("Setting governor");
+            cores.iter_mut().try_for_each(|c|c.set_governor(&gov))
+        },
+        None => {
+            debug!("No governor settings to apply");
+            Ok(())
+        }
+        
+    };
+    try_or_exit!(coreset, 1);
+
+    let minset = match cfg.min{
+        Some(min) =>{
+            info!("Setting minimum frequencies");
+            cores.iter_mut().try_for_each(|c|c.set_min(min*1000))
+        },
+        None => {
+            debug!("No min settings to apply");
+            Ok(())
+        }
+    };
+
+    try_or_exit!(minset, 1);
+
+    let maxset = match cfg.max{
+        Some(max) =>{
+            info!("Setting maximum frequencies");
+            cores.iter_mut().try_for_each(|c|c.set_max(max*1000))
+        },
+        None => {
+            debug!("No max settings to apply");
+            Ok(())
+        }
+    };
+
+    try_or_exit!(maxset, 1);
+
 }
 
 fn show(){
@@ -76,7 +143,7 @@ fn show(){
 
     // generate lines of core descriptions
 
-    println!("Current Settings");
+    println!("Current Settings:");
 
     for cs in cores.chunks(cores_per_line){
     	let mut creline : String = "Core                   ".into();
@@ -149,10 +216,9 @@ fn main(){
     
     
     match settings{
-            Mdcr::Help => unimplemented!(),
+            Mdcr::Set(c) => set(c),
             Mdcr::Powersave => powersave(),
             Mdcr::Performance => performance(),
             Mdcr::Show => show(),
-            _ => unimplemented!()
     };   
 }

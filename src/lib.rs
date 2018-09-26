@@ -63,7 +63,6 @@ pub struct CoreSetting{
 
 impl CoreSetting{
 
-
     /// discover settings for the core specified by its path
     pub fn discover(core: PathBuf) -> io::Result<CoreSetting>{
     let g = core.join("cpufreq");
@@ -109,26 +108,32 @@ impl CoreSetting{
             .expect("Core name parsing failed")
     }
 
+    /// returns cpu minimum frequency in kHz
     pub fn cpu_min(&self) -> u32{
         self.cpuinfo_min_freq
     }
 
+    /// returns cpu maximum frequency in kHz
     pub fn cpu_max(&self) -> u32{
         self.cpuinfo_max_freq
     }
     
+    /// returns current min scaling frequency in kHz
     pub fn curr_min(&self) -> u32{
         self.scaling_min_freq
     }
 
+    /// returns current max scaling frequency in kHz
     pub fn curr_max(&self) -> u32{
         self.scaling_max_freq
     }
 
+    /// returns the current governor
     pub fn curr_gov(&self) -> &str{
         self.scaling_governor.as_ref()
     }
 
+    /// returns available governors
     pub fn available_govs(&self) -> &[String]{
         self.scaling_available_governors.as_ref()
     }
@@ -150,7 +155,7 @@ impl CoreSetting{
         {
             Ok(freq)
         }else{
-            Err(Error::new(ErrorKind::InvalidInput, format!("Min Frequency{} not in {}..={}", freq, self.cpuinfo_min_freq, self.scaling_max_freq)))
+            Err(Error::new(ErrorKind::InvalidInput, format!("Min Frequency {} not in ({},{}]", freq, self.cpuinfo_min_freq, self.scaling_max_freq)))
         }
     }
 
