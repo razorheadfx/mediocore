@@ -4,6 +4,7 @@ extern crate env_logger;
 
 #[macro_use]
 extern crate structopt;
+use std::fmt::Write;
 use std::process::exit;
 use mediocore::CoreSetting;
 use structopt::StructOpt;
@@ -11,7 +12,8 @@ use structopt::StructOpt;
 extern crate mediocore;
 
 use std::io;
-use std::io::ErrorKind;
+use std::io::{ErrorKind};
+use std::collections::HashSet;
 
 macro_rules! ghz{
     ($x:expr) =>(   
@@ -23,7 +25,7 @@ macro_rules! ghz{
 #[derive(Debug, StructOpt)]
 #[structopt(name = "mediocore")]
 enum Mdcr{
-	#[structopt(name = "help")] 
+	#[structopt(name = "help", help = "print help messages")]
 	Help,
 	#[structopt(name = "powersave")]
 	Powersave,
@@ -31,6 +33,16 @@ enum Mdcr{
 	Performance,
 	#[structopt(name = "show")]
 	Show
+}
+
+macro_rules! try_or_exit_1 {
+    ($x:expr) => (match $x{
+    	Ok(o) => o,
+    	Err(e) => {
+    		eprintln!("{:?}",e);
+    		exit(1)
+    	}
+    })
 }
 
 fn discover() -> io::Result<Vec<CoreSetting>>{
@@ -49,9 +61,86 @@ fn performance(){
 }
 
 fn show(){
-	unimplemented!()
+    /// Expected terminal line length
+    const TERM_LEN : usize = 80;
+    /// Width of the table 
+    const TABLE_LEGEND_LEN : usize = 23;
+
+	let cores = try_or_exit_1!(discover());
+
+	//123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789
+	//Core     |    0    	  1         2         3         4         6         7
+	//Min[GHz] |         
+    //Max[GHz] |
+    //Governor |
+
+    // find out how long the governor description is, then scale space alotted to each core accordingly
+    let longest_gov = cores.iter().map(|c| c.curr_gov().len()).max().expect("No governors");
+    // add 3 chars of padding (1 front, 1 end, 1 for the separator)
+    let per_core_chars = longest_gov+3;
+    let cores_per_line = (TERM_LEN-TABLE_LEGEND_LEN)/per_core_chars;
+
+    // generate lines of core descriptions
+    for cs in cores.chunks(cores_per_line){
+    	let mut creline : String = "Core                  :".into();
+    	let mut minline : String = "Min CPU/Current [GHz] :".into();
+    	let mut maxline : String = "Max CPU/Current [GHz] :".into();   
+    	let mut govline : String = "Current Governor      :".into();
+
+    	for core in cs.iter(){
+            let mut pad_to = creline.len()+per_core_chars;
+    		write!(creline," {}", core.num());
+    		write!(minline," {:03.3}", core.cpu_min() as f64 / 1e6);
+            write!(maxline," {:03.3}", core.cpu_max() as f64 / 1e6);
+            write!(govline," {}", core.curr_gov());
+            for line in [&mut creline, &mut minline, &mut maxline, &mut govline].iter_mut(){
+            while line.len() < pad_to{
+                write!(line, " ");
+            }
+            write!(line,"|");    
+        }
+
+    	}
+        
+    	println!("{}",creline);
+    	println!("{}",minline);
+    	println!("{}",maxline);
+    	println!("{}",govline);
+
+        let mut divider = String::with_capacity(80);
+        (0..creline.len()).for_each(|i| {
+            if i < TABLE_LEGEND_LEN{
+                divider.push_str(" ");
+            }else{
+                divider.push_str("-");
+            }
+        });
+        println!("{}", divider);
+        
+        // all good? exit with 0
+    }
+
+    // display all available governors
+    //OPT: maybe use color coding so we can show which core supports which (most likely they are not going to differ... so why bother with the terminal color crate)
+    let available_governors = cores.iter().fold(HashSet::new(),|mut govs, c|
+    { 
+        c.available_govs()
+        .iter()
+        .for_each(|g| {let _ = govs.insert(g);});
+        govs
+    });
+
+    let av_govs = available_governors.iter().fold("* Available Governors : ".to_string(), | mut av_govs, gov|{
+        write!(av_govs, "{} ", gov);
+        av_govs
+    });
+    println!("{}",av_govs);
+
+    exit(0);
+
+
 }
-	
+
 fn main(){
     env_logger::init();
     let settings = Mdcr::from_args();
@@ -59,9 +148,10 @@ fn main(){
     
     
     match settings{
-			Mdcr::Help => unimplemented!(),
-			Mdcr::Powersave => powersave(),
-			Mdcr::Performance => performance(),
-			_ => unimplemented!()
-	};	 
+            Mdcr::Help => unimplemented!(),
+            Mdcr::Powersave => powersave(),
+            Mdcr::Performance => performance(),
+            Mdcr::Show => show(),
+            _ => unimplemented!()
+    };   
 }

@@ -38,3 +38,4 @@ See LICENSE for details.
 
 ## Optimisations
 - [ ] Store core number in CoreSetting 
+- [ ] Display available governors in show mode using color coding

@@ -109,6 +109,31 @@ impl CoreSetting{
             .expect("Core name parsing failed")
     }
 
+    pub fn cpu_min(&self) -> u32{
+        self.cpuinfo_min_freq
+    }
+
+    pub fn cpu_max(&self) -> u32{
+        self.cpuinfo_max_freq
+    }
+    
+    pub fn curr_min(&self) -> u32{
+        self.scaling_min_freq
+    }
+
+    pub fn curr_max(&self) -> u32{
+        self.scaling_max_freq
+    }
+
+    pub fn curr_gov(&self) -> &str{
+        self.scaling_governor.as_ref()
+    }
+
+    pub fn available_govs(&self) -> &[String]{
+        self.scaling_available_governors.as_ref()
+    }
+
+
     /// check given governor against valid governors and apply it to the internal representation
     /// Only calls to apply will write changes to the sysfs
     pub fn set_governor(&mut self, guvnor : &str) -> io::Result<()>{
