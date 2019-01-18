@@ -24,7 +24,7 @@ macro_rules! parse_num {
 }
 
 /// find relevant sysfs folders in /sys/devices/system/cpu/cpu<x>
-pub fn discover_core_settings() -> io::Result<Vec<CoreSetting>> {
+pub fn discover_core_settings() -> io::Result<Vec<Core>> {
     let cpu_root = fs::read_dir("/sys/devices/system/cpu/")?;
     debug!("Content of /sys/devices/system/cpu/  {:#?}", cpu_root);
 
@@ -43,7 +43,7 @@ pub fn discover_core_settings() -> io::Result<Vec<CoreSetting>> {
         .map(|p| p.path())
         .inspect(|c| debug!("Found core: {:?}", c))
         .try_fold(Vec::new(), |mut cores, c| {
-            let c = CoreSetting::discover(c)?;
+            let c = Core::discover(c)?;
             cores.push(c);
             Ok(cores)
         })
@@ -52,7 +52,7 @@ pub fn discover_core_settings() -> io::Result<Vec<CoreSetting>> {
 /// Representation of the current cpufrequency serttings of a single core
 /// Can be obtained by running [discover_core_settings]
 #[derive(Clone, Debug)]
-pub struct CoreSetting {
+pub struct Core {
     /// Path to the core directory
     core: PathBuf,
     /// Number of the core
@@ -71,9 +71,9 @@ pub struct CoreSetting {
     scaling_governor: String,
 }
 
-impl CoreSetting {
+impl Core {
     /// discover settings for the core specified by its path
-    pub fn discover(core: PathBuf) -> io::Result<CoreSetting> {
+    pub fn discover(core: PathBuf) -> io::Result<Core> {
         let g = core.join("cpufreq");
 
         let cpuinfo_min_freq: u32 = parse_num!(g, "cpuinfo_min_freq");
@@ -102,7 +102,7 @@ impl CoreSetting {
             .parse()
             .expect("Failed to parse the u32 core number");
 
-        let c = CoreSetting {
+        let c = Core {
             core,
             num,
             cpuinfo_max_freq,
@@ -205,7 +205,7 @@ impl CoreSetting {
 
     /// Set the minimum scaling frequency (lower frequency limit)
     /// This operation is not checked by mediocore, but the kernel may refuse to accept certain inputs.  
-    /// Use [CoreSetting::validate_min] on the value beforehand.
+    /// Use [Core::validate_min] on the value beforehand.
     pub fn set_min(&mut self, freq: u32) -> io::Result<()> {
         debug!(
             "Setting minimum scaling frequency {} on {}",
@@ -220,7 +220,7 @@ impl CoreSetting {
 
     /// Set the maximum scaling frequency (lower frequency limit)  
     /// This operation is not checked by mediocore, but the kernel may refuse to accept certain inputs.  
-    /// Use [CoreSetting::validate_max] on the value beforehand.
+    /// Use [Core::validate_max] on the value beforehand.
     pub fn set_max(&mut self, freq: u32) -> io::Result<()> {
         debug!(
             "Setting maximum scaling frequency {} on {}",
@@ -235,7 +235,7 @@ impl CoreSetting {
 
     /// Apply the given governor
     /// This operation is not checked by mediocore, but the kernel may refuse to accept certain inputs.
-    /// Use [CoreSetting::validate_governor] on the value beforehand.
+    /// Use [Core::validate_governor] on the value beforehand.
     pub fn set_governor(&mut self, guvnor: &str) -> io::Result<()> {
         debug!("Setting governor {} on {}", guvnor, self.num);
         fs::OpenOptions::new()
@@ -251,11 +251,11 @@ impl CoreSetting {
 mod test {
     use io::{ErrorKind, Result};
     use std::path::PathBuf;
-    use CoreSetting;
+    use Core;
 
     #[test]
     fn freq_validation() {
-        let s = CoreSetting {
+        let s = Core {
             core: PathBuf::from("/sys/devices/system/cpu/cpu0"),
             num: 0,
             cpuinfo_min_freq: 800000,
@@ -287,7 +287,7 @@ mod test {
 
     #[test]
     fn govnor_validation() {
-        let s = CoreSetting {
+        let s = Core {
             core: PathBuf::from(&"/sys/devices/system/cpu/cpu0"),
             num: 0,
             cpuinfo_min_freq: 800000,
