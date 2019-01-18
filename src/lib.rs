@@ -56,7 +56,7 @@ pub struct CoreSetting {
     /// Path to the core directory
     core: PathBuf,
     /// Number of the core
-    corenum: u32,
+    num: u32,
     /// CPU Minimum Frequency
     cpuinfo_max_freq: u32,
     /// CPU Maximum Frequency
@@ -93,7 +93,7 @@ impl CoreSetting {
         };
 
         // parse the number
-        let corenum = core
+        let num = core
             .to_str()
             .expect("Failed to convert PathBuf to String")
             .rsplit("cpu")
@@ -104,7 +104,7 @@ impl CoreSetting {
 
         let c = CoreSetting {
             core,
-            corenum,
+            num,
             cpuinfo_max_freq,
             cpuinfo_min_freq,
             scaling_available_governors,
@@ -119,7 +119,7 @@ impl CoreSetting {
 
     /// returns the number of the core
     pub fn num(&self) -> u32 {
-        self.corenum
+        self.num
     }
 
     /// returns cpu minimum frequency in kHz
@@ -209,7 +209,7 @@ impl CoreSetting {
     pub fn set_min(&mut self, freq: u32) -> io::Result<()> {
         debug!(
             "Setting minimum scaling frequency {} on {}",
-            freq, self.corenum
+            freq, self.num
         );
         let mut f = fs::OpenOptions::new()
             .write(true)
@@ -224,7 +224,7 @@ impl CoreSetting {
     pub fn set_max(&mut self, freq: u32) -> io::Result<()> {
         debug!(
             "Setting maximum scaling frequency {} on {}",
-            freq, self.corenum
+            freq, self.num
         );
         let mut f = fs::OpenOptions::new()
             .write(true)
@@ -237,7 +237,7 @@ impl CoreSetting {
     /// This operation is not checked by mediocore, but the kernel may refuse to accept certain inputs.
     /// Use [CoreSetting::validate_governor] on the value beforehand.
     pub fn set_governor(&mut self, guvnor: &str) -> io::Result<()> {
-        debug!("Setting governor {} on {}", guvnor, self.corenum);
+        debug!("Setting governor {} on {}", guvnor, self.num);
         fs::OpenOptions::new()
             .write(true)
             .read(false)
@@ -257,7 +257,7 @@ mod test {
     fn freq_validation() {
         let s = CoreSetting {
             core: PathBuf::from("/sys/devices/system/cpu/cpu0"),
-            corenum: 0,
+            num: 0,
             cpuinfo_min_freq: 800000,
             cpuinfo_max_freq: 2500000,
             scaling_available_governors: vec![],
@@ -289,7 +289,7 @@ mod test {
     fn govnor_validation() {
         let s = CoreSetting {
             core: PathBuf::from(&"/sys/devices/system/cpu/cpu0"),
-            corenum: 0,
+            num: 0,
             cpuinfo_min_freq: 800000,
             cpuinfo_max_freq: 2500000,
             scaling_available_governors: vec!["performance".into(), "powersave".into()],
