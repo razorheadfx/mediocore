@@ -207,10 +207,7 @@ impl Core {
     /// This operation is not checked by mediocore, but the kernel may refuse to accept certain inputs.  
     /// Use [Core::validate_min] on the value beforehand.
     pub fn set_min(&mut self, freq: u32) -> io::Result<()> {
-        debug!(
-            "Setting minimum scaling frequency {} on {}",
-            freq, self.num
-        );
+        debug!("Setting minimum scaling frequency {} on {}", freq, self.num);
         let mut f = fs::OpenOptions::new()
             .write(true)
             .open(self.core.join("cpufreq/scaling_min_freq"))?;
@@ -222,10 +219,7 @@ impl Core {
     /// This operation is not checked by mediocore, but the kernel may refuse to accept certain inputs.  
     /// Use [Core::validate_max] on the value beforehand.
     pub fn set_max(&mut self, freq: u32) -> io::Result<()> {
-        debug!(
-            "Setting maximum scaling frequency {} on {}",
-            freq, self.num
-        );
+        debug!("Setting maximum scaling frequency {} on {}", freq, self.num);
         let mut f = fs::OpenOptions::new()
             .write(true)
             .open(self.core.join("cpufreq/scaling_max_freq"))?;
