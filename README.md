@@ -11,25 +11,16 @@ Mediocore also sanity checks inputs by first discovering current and viable sett
 With Rust installed run ```cargo install mediocore``` to install the mdcr utility.
 
 ## Usage
-Run ```mdcr help``` to show available commands.  
-* ```mdcr set -g <governor>```  
-* ```mdcr set -f <frequency>``` tries to set the maximum scaling frequency in MHz (i.e. 2000 for 2GHz) - if the value is out of bounds it logs an error and exits with code 1.  
-By default mediocore will try to apply settings to all cores unless you specify an individual core (e.g. ```mdcore -f 2000 -c 1,5``` for cores 1 and 5) - if the specified cores could not be found it will do nothing and exit with code 1.  
+Run ```mdcr help``` to show available commands and ```mdcr help <subcommand>``` to see per.
 
+* ```mdcr show``` discovers and displays current/possible settings in a console friendly way
+* ```mdcr show --json``` writes discovered settings to stdout as json  
+* ```mdcr  set [-g governor] [-l lower_threshold] [-h upper_threshold] [-c comma_separated_list_of_core_numbers] ``` applies the settings given via -g/-l/-h to all cores unless a set of cores is specified via -c
 
-### Shortcuts  
-* ```mdcr powersave``` applies minimum scaling frequency and powersave governor - if available, else leaves governor unchanged, warns and exits with code 1).  
-* ```mdcr performance``` applies maximum scaling frequency and performance governor - if available, else leaves governor unchanged, warns and exits with code 1).  
+There are also two shortcut commands:  
+* ```mdcr ps|powersave``` sets cpu minimum frequency for both lower and upper frequency limits and applies powersave governor.  
+* ```mdcr p|performance``` sets cpu maximum frequency as the upper frequency limit and applies performance governor.  
 
 ## License
 Licensed under [MPL2](https://www.mozilla.org/en-US/MPL/2.0/).
 See LICENSE for details.
-
-## TODO
-- [ ] Implement performance
-- [ ] Implement powersave
-- [ ] Implement set
-
-## Optimisations
-- [ ] Store core number in CoreSetting 
-- [ ] Display available governors in show mode using color coding
