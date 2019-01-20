@@ -7,6 +7,8 @@ categories  = ["command-line-tool"]
 authors     = ["razorheadfx <felix.girke@tu-dortmund.de>"]
 license     = "MPL2"
 readme      = "README.md"
+repository  = "https://github.com/razorheadfx/mediocore"
+https       = "https://docs.rs/mediocore"
 
 [dependencies]
 log         = "0.4"
