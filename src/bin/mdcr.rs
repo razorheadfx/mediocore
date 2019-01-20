@@ -12,16 +12,19 @@ use structopt::StructOpt;
 use mediocore::Core;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "mediocore", about = "discover and manipulate linux cpu frequency settings")]
+#[structopt(
+    name = "mediocore",
+    about = "discover and manipulate linux cpu frequency settings"
+)]
 enum Mdcr {
-    #[structopt(name = "set")]
-    /// Manipulate scaling governor and min/max scaling frequency. Run "mdcr set help" for details.
+    #[structopt(name = "set", alias = "s")]
+    /// Shortcut: s; Manipulate scaling governor and min/max scaling frequency. Run "mdcr set help" for details.
     Set(Cfg),
-    #[structopt(name = "powersave")]
-    /// Shortcut: sets low and high scaling frequency thresholds to minimum and applies powersave governor.
+    #[structopt(name = "powersave", alias = "ps")]
+    /// Shortcut: ps; sets low and high scaling frequency thresholds to minimum and applies powersave governor.
     Powersave,
-    #[structopt(name = "performance")]
-    /// Shortcut: sets high scaling frequency threshold to maximum and applies performance governor.
+    #[structopt(name = "performance", alias = "p")]
+    /// Shortcut: p;  sets high scaling frequency threshold to maximum and applies performance governor.
     Performance,
     #[structopt(name = "show")]
     /// Discover and show per-core settings either as console-friendly table or print the raw data as json via --json
@@ -162,12 +165,11 @@ fn performance() {
 fn set(cfg: Cfg) {
     let mut cores = discover_cores();
 
-
-    if cfg.governor.is_none() && cfg.low.is_none() && cfg.high.is_none(){
+    if cfg.governor.is_none() && cfg.low.is_none() && cfg.high.is_none() {
         eprintln!("Please provide settings to set. Run \"mdcr help set\" to see the options");
         exit(1);
     }
-    
+
     // cores specified? well then drop the others
     if !cfg.cores.is_empty() {
         cores.retain(|c| cfg.cores.iter().any(|n| n.eq(&c.num())));
