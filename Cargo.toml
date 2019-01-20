@@ -1,7 +1,7 @@
 [package]
 name        = "mediocore"
 version     = "0.1.0"
-description = "Linux cpu frequency scaling utility"
+description = "discover and manipulate linux cpu frequency settings"
 keywords    = ["cpufrequtils","linux","sysfs","cli"]
 categories  = ["command-line-tool"]
 authors     = ["razorheadfx <felix.girke@tu-dortmund.de>"]

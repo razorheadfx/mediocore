@@ -12,21 +12,21 @@ use structopt::StructOpt;
 use mediocore::Core;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "mediocore")]
+#[structopt(name = "mediocore", about = "discover and manipulate linux cpu frequency settings")]
 enum Mdcr {
     #[structopt(name = "set")]
     /// Manipulate scaling governor and min/max scaling frequency. Run "mdcr set help" for details.
     Set(Cfg),
     #[structopt(name = "powersave")]
-    /// Set low and high scaling frequency thresholds to minimal CPU frequency and apply powersave governor.
+    /// Shortcut: sets low and high scaling frequency thresholds to minimum and applies powersave governor.
     Powersave,
     #[structopt(name = "performance")]
-    /// Set high scaling frequency threshold to maximum CPU frequency and apply performance governor.
+    /// Shortcut: sets high scaling frequency threshold to maximum and applies performance governor.
     Performance,
     #[structopt(name = "show")]
-    /// Pretty print per-core config
+    /// Discover and show per-core settings either as console-friendly table or print the raw data as json via --json
     Show {
-        #[structopt(long = "json", help = "format the output as json")]
+        #[structopt(long = "json", help = "print raw data as json")]
         json: bool,
     },
 }
@@ -44,7 +44,7 @@ struct Cfg {
     #[structopt(short = "h", long = "high")]
     pub high: Option<u32>,
     #[structopt(short = "c", long = "cores")]
-    /// Comma separated cores to apply the settings. If unspecified se<ttings are applied to all cores.
+    /// Comma separated cores to apply the settings. If unspecified settings are applied to all cores.
     pub cores: Vec<u32>,
 }
 
@@ -162,6 +162,12 @@ fn performance() {
 fn set(cfg: Cfg) {
     let mut cores = discover_cores();
 
+
+    if cfg.governor.is_none() && cfg.low.is_none() && cfg.high.is_none(){
+        eprintln!("Please provide settings to set. Run \"mdcr help set\" to see the options");
+        exit(1);
+    }
+    
     // cores specified? well then drop the others
     if !cfg.cores.is_empty() {
         cores.retain(|c| cfg.cores.iter().any(|n| n.eq(&c.num())));
