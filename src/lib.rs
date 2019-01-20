@@ -1,5 +1,8 @@
 #[macro_use]
 extern crate log;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 use std::fs;
 use std::io;
@@ -51,7 +54,7 @@ pub fn discover_core_settings() -> io::Result<Vec<Core>> {
 
 /// Representation of the current cpufrequency serttings of a single core
 /// Can be obtained by running [discover_core_settings]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Core {
     /// Path to the core directory
     core: PathBuf,

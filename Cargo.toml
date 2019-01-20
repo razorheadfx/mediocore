@@ -10,10 +10,12 @@ readme      = "README.md"
 
 [dependencies]
 log         = "0.4.3"
-env_logger  = { version = "0.5.11", optional = true }
-structopt   = { version = "0.2"   , optional = true }
+serde       = "1.0.85"
+serde_derive= "1.0.85"
+structopt   = { version = "0.2"  , optional = true }
+serde_json  = { version ="1.0.36", optional = true }
 
 
 [features]
 default     = ["bin"]
-bin         = ["env_logger", "structopt"]
+bin         = ["structopt", "serde_json"]
