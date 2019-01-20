@@ -1,4 +1,7 @@
 # mediocore - a more convenient cpufrequtils
+[![Latest Version](https://img.shields.io/crates/v/mediocore.svg)](https://crates.io/crates/mediocore)
+[![Documentation](https://docs.rs/mediocore/badge.svg)](https://docs.rs/crate/mediocore)
+![License](https://img.shields.io/crates/l/mediocore.svg)
 
 ## What is mediocore?
 mediocore is a Rust implementation of the ```cpufrequtils``` toolkit used to get and set per-CPU-core frequency scaling governor and CPU frequency target.  
