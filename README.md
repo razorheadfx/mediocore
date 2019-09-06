@@ -14,7 +14,7 @@ Mediocore also sanity checks inputs by first discovering current and viable sett
 With Rust installed run ```cargo install mediocore``` to install the mdcr utility.
 
 ## Usage
-Run ```mdcr help``` to show available commands and ```mdcr help <subcommand>``` to see per.
+Run ```mdcr help``` to show available commands and ```mdcr help <subcommand>``` to see each subcommands help messages.
 
 * ```mdcr show``` discovers and displays current/possible settings in a console friendly way
 * ```mdcr show --json``` writes discovered settings to stdout as json  
